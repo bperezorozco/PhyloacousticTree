@@ -3,10 +3,12 @@ function [ F ] = folder_formants( folder )
 %   Detailed explanation goes here
 
 i = 1;
-for file=dir( strcat(folder, '/*.wav') )'
+folder
+s = strcat(folder, '/*.wav');
+for file=dir( s )'
+    file.name
     [x fs] = audioread( strcat(folder, '/', file.name) );
-    F{i} = formants(x, fs);
-    mean(F{i}, 1)
+    F(i, :) = mean(formants(x, fs), 1);
     i = i + 1;
 end
 

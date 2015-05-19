@@ -40,10 +40,10 @@ if nargin < 7
     Freqs = [ 90 400 ];
 end
 if nargin < 6
-    n_formants = 4;
+    n_formants = 5;
 end
 if nargin < 5
-    n_lpc = 2 + round( fs / 1000 );%justify
+    n_lpc = 25;
 end
 if nargin < 4
     overlap = 40;
@@ -54,10 +54,12 @@ end
 
 shift = window_length - overlap;
 len = length( signal ) - mod( length(signal), shift ) - shift;
+frames = len / shift;
+F = zeros(frames, n_formants);
 f_threshold = 0;
 frame = 1;
 
-display( 'Working...' );
+%display( 'Working...' );
 
 for begin = 1:shift:len
     x = signal( begin:(begin + window_length - 1) );
@@ -70,7 +72,15 @@ for begin = 1:shift:len
         x = filter(1, Emph, x);
     end
     
+    x = mean_normalise( x );
+    
     a = lpc( x, n_lpc );
+    
+    if ismember( 1, isnan(a) )
+        display('Found silent portion, skipping');
+        continue;
+    end
+    
     rts = roots( a );
     rts = rts( imag(rts) >= f_threshold );
     angz = atan2( imag(rts), real(rts) );
@@ -83,6 +93,9 @@ for begin = 1:shift:len
         if ( frqs(i) > Freqs(1) && bw(i) < Freqs(2) )
             F(frame, i_formants) = frqs(i);
             i_formants = i_formants + 1;
+            if i_formants > n_formants
+                break;
+            end
         end
     end
     
@@ -90,9 +103,9 @@ for begin = 1:shift:len
     
 end
 
-F = F(:, 1:n_formants);
+F = F(1:(frame-1), 1:n_formants);
 
-display( 'Finished.' );
+%display( 'Finished.' );
 end
 
 

@@ -1,8 +1,8 @@
 load mtlb;
 
-segmentlen=100;
-noverlap = 90;
-NFFT = 128;
+segmentlen= 256;
+noverlap = 40;
+NFFT = 256;
 
 %spectrogram(mtlb, segmentlen, noverlap, NFFT, Fs, 'yaxis');
 
@@ -27,8 +27,8 @@ bw = -1/2*(Fs/(2*pi))*log(abs(rts(indices)));
 nn = 1;
 for kk = 1:length(frqs)
     if (frqs(kk) > 90 && bw(kk) <400)
-        formants(nn) = frqs(kk);
+        forms(nn) = frqs(kk);
         nn = nn+1;
     end
 end
-formants
+forms

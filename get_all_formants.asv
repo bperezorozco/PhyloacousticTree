@@ -1,0 +1,7 @@
+load folders
+
+for i=1:3
+    F{i} = folder_formants(strcat('../../dataset/', folders{i}));
+end
+
+mapObj = containers.Map(folders(1:3)',F);
