@@ -37,7 +37,7 @@ if nargin < 8
     window = 'hamming';
 end
 if nargin < 7
-    Freqs = [ 90 400 ];
+    Freqs = [ 100 100000 400 ];
 end
 if nargin < 6
     n_formants = 5;
@@ -90,7 +90,7 @@ for begin = 1:shift:len
     
     i_formants = 1;
     for i = 1:length(frqs)
-        if ( frqs(i) > Freqs(1) && bw(i) < Freqs(2) )
+        if ( frqs(i) > Freqs(1) && frqs(i) < Freqs(2) && bw(i) < Freqs(3) )
             F(frame, i_formants) = frqs(i);
             i_formants = i_formants + 1;
             if i_formants > n_formants

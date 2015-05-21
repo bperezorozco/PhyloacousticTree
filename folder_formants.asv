@@ -3,7 +3,7 @@ function [ F ] = folder_formants( folder )
 %   Detailed explanation goes here
 
 i = 1;
-n_bins = 10;
+n_bins = 20;
 folder
 s = strcat(folder, '/*.wav');
 for file=dir( s )'
@@ -12,7 +12,7 @@ for file=dir( s )'
     %F(i, :) = mean(formants(x, fs), 1);
     t = formants(x, fs);
     h = histogram(t(:), n_bins);
-    F(i, :) = h.Values / sum(h.Values);
+    F(i, :) = h.Values / nor;
     i = i + 1;
 end
 
