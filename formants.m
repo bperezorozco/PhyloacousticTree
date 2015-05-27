@@ -11,7 +11,7 @@ function [ F ] = formants( signal, fs, window_length, overlap, n_lpc, n_formants
 
 %DEFAULT PARAMETERS:
 %   @window_length
-%       integer, default 256 samples
+%       integer, default 10 ms
 %   @overlap 
 %       integer, default 40 samples
 %   @n_formants 
@@ -26,7 +26,7 @@ function [ F ] = formants( signal, fs, window_length, overlap, n_lpc, n_formants
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if nargin < 2
-    display( 'REQUIRED: @signal, @fs' );
+    display( 'REQUIRED: @signal, @fs, @window_length' );
     return;
 end
 
@@ -37,30 +37,30 @@ if nargin < 8
     window = 'hamming';
 end
 if nargin < 7
-    Freqs = [ 100 100000 400 ];
+    Freqs = [ 500 100000 400 ];
 end
 if nargin < 6
     n_formants = 5;
 end
 if nargin < 5
-    n_lpc = 25;
+    n_lpc = n_formants * 2 + 2;
 end
 if nargin < 4
     overlap = 40;
 end
-if nargin < 3
-    window_length = 256;
-end
 
+window_length = round( fs * window_length / 1000 );
+overlap = round( window_length * 0.25 );
 shift = window_length - overlap;
 len = length( signal ) - mod( length(signal), shift ) - shift;
 frames = len / shift;
 F = zeros(frames, n_formants);
-f_threshold = 0;
 frame = 1;
 
 %display( 'Working...' );
-
+%spectrogram(mean_normalise(signal), 100, 90, 128, fs, 'yaxis' );
+colormap bone;
+%pause;
 for begin = 1:shift:len
     x = signal( begin:(begin + window_length - 1) );
     
@@ -73,7 +73,8 @@ for begin = 1:shift:len
     end
     
     x = mean_normalise( x );
-    
+    %spectrogram(x, window_length, overlap, 128, fs, 'yaxis' );
+    %colormap bone;
     a = lpc( x, n_lpc );
     
     if ismember( 1, isnan(a) )
@@ -82,31 +83,30 @@ for begin = 1:shift:len
     end
     
     rts = roots( a );
-    rts = rts( imag(rts) >= f_threshold );
+    rts = rts( imag(rts) >= 0 );
     angz = atan2( imag(rts), real(rts) );
 
-    [frqs, indices] = sort( angz .* ( fs / ( 2 * pi ) ), 'descend' );
+    [frqs, indices] = sort( angz .* ( fs / ( 2 * pi ) ) );
     bw = ( -1 / 2 ) * ( fs / ( 2 * pi ) ) * log( abs ( rts( indices ) ) );
-    
     i_formants = 1;
+    
     for i = 1:length(frqs)
-        if ( frqs(i) > Freqs(1) && frqs(i) < Freqs(2) && bw(i) < Freqs(3) )
+        if i_formants > n_formants
+            break;
+        end
+        if ( frqs(i) > Freqs(1) && frqs(i) < Freqs(2) )
             F(frame, i_formants) = frqs(i);
             i_formants = i_formants + 1;
-            if i_formants > n_formants
-                break;
-            end
         end
     end
-    
+    F(frame, :);
+    %pause;
     frame = frame + 1;
     
 end
 
-F = F(1:(frame-1), 1:n_formants);
 
 %display( 'Finished.' );
 end
-
 
 

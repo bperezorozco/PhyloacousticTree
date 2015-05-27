@@ -6,4 +6,4 @@ end
 
 empObj = containers.Map(folders',H);
 
-D_emp_2 = get_rows_distance( unfold_cell_array(values(empObj)) );
+D_files = get_rows_distance( unfold_cell_array(values(empObj)) );
