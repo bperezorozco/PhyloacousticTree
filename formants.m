@@ -37,10 +37,10 @@ if nargin < 8
     window = 'hamming';
 end
 if nargin < 7
-    Freqs = [ 500 100000 400 ];
+    Freqs = [ 0 40000 400 ];
 end
 if nargin < 6
-    n_formants = 5;
+    n_formants = 10;
 end
 if nargin < 5
     n_lpc = n_formants * 2 + 2;
@@ -58,8 +58,10 @@ F = zeros(frames, n_formants);
 frame = 1;
 
 %display( 'Working...' );
-%spectrogram(mean_normalise(signal), 100, 90, 128, fs, 'yaxis' );
-colormap bone;
+% spectrogram(mean_normalise(signal), 100, 90, 128, fs, 'yaxis' );
+% colormap bone;
+% pause;
+
 %pause;
 for begin = 1:shift:len
     x = signal( begin:(begin + window_length - 1) );
@@ -73,10 +75,15 @@ for begin = 1:shift:len
     end
     
     x = mean_normalise( x );
-    %spectrogram(x, window_length, overlap, 128, fs, 'yaxis' );
-    %colormap bone;
-    a = lpc( x, n_lpc );
     
+    a = lpc( x, n_lpc );
+%     [h,f]=freqz(1,a,512,fs);
+%     figure;
+%     plot(f,20*log10(abs(h)+eps));
+%     legend('LP Filter');
+%     xlabel('Frequency (Hz)');
+%     ylabel('Gain (dB)');
+%     pause;
     if ismember( 1, isnan(a) )
         display('Found silent portion, skipping');
         continue;
@@ -84,10 +91,11 @@ for begin = 1:shift:len
     
     rts = roots( a );
     rts = rts( imag(rts) >= 0 );
+    
     angz = atan2( imag(rts), real(rts) );
-
     [frqs, indices] = sort( angz .* ( fs / ( 2 * pi ) ) );
-    bw = ( -1 / 2 ) * ( fs / ( 2 * pi ) ) * log( abs ( rts( indices ) ) );
+    bw = -1/2*(fs/(2*pi))*log(abs(rts(indices)));
+    
     i_formants = 1;
     
     for i = 1:length(frqs)
@@ -96,15 +104,18 @@ for begin = 1:shift:len
         end
         if ( frqs(i) > Freqs(1) && frqs(i) < Freqs(2) )
             F(frame, i_formants) = frqs(i);
+            B(frame, i_formants) = bw(i);
             i_formants = i_formants + 1;
         end
     end
-    F(frame, :);
-    %pause;
+%     F(frame, :)
+%     spectrogram(x, window_length, overlap, 128, fs, 'yaxis' );
+%     colormap bone;
+%     pause;
     frame = frame + 1;
     
 end
-
+B
 
 %display( 'Finished.' );
 end
