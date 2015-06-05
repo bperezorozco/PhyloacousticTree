@@ -1,4 +1,4 @@
-function [ F ] = formants( signal, fs, window_length, overlap, n_lpc, n_formants, Freqs, window, Emph )
+function [ F B ] = formants( signal, fs, n_formants, window_length, overlap, n_lpc, Freqs, window, Emph )
 %FORMANTS Estimates the formants of @signal every @window_length samples
 %with @overlap samples. It returns the first @n_formants in the interval
 %@Freqs. It can do preprocessing by applying window @window and
@@ -24,8 +24,10 @@ function [ F ] = formants( signal, fs, window_length, overlap, n_lpc, n_formants
 %   @Emph 
 %       vector of 2 decimals, coefficients for preemphasis
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+PAUSE = true;
+DRAW_RESPONSE = 0;
 
-if nargin < 2
+if nargin < 3
     display( 'REQUIRED: @signal, @fs, @window_length' );
     return;
 end
@@ -37,17 +39,21 @@ if nargin < 8
     window = 'hamming';
 end
 if nargin < 7
-    Freqs = [ 0 40000 400 ];
+    Freqs = [ 500 40000 500 ];
 end
 if nargin < 6
-    n_formants = 10;
-end
-if nargin < 5
     n_lpc = n_formants * 2 + 2;
 end
-if nargin < 4
+if nargin < 5
     overlap = 40;
 end
+if nargin < 4
+    window_length = 10;
+end
+if nargin < 3
+    n_formants = round( fs / 1000 );
+end
+
 
 window_length = round( fs * window_length / 1000 );
 overlap = round( window_length * 0.25 );
@@ -55,14 +61,9 @@ shift = window_length - overlap;
 len = length( signal ) - mod( length(signal), shift ) - shift;
 frames = len / shift;
 F = zeros(frames, n_formants);
+B = zeros(frames, n_formants);
 frame = 1;
 
-%display( 'Working...' );
-% spectrogram(mean_normalise(signal), 100, 90, 128, fs, 'yaxis' );
-% colormap bone;
-% pause;
-
-%pause;
 for begin = 1:shift:len
     x = signal( begin:(begin + window_length - 1) );
     
@@ -77,13 +78,7 @@ for begin = 1:shift:len
     x = mean_normalise( x );
     
     a = lpc( x, n_lpc );
-%     [h,f]=freqz(1,a,512,fs);
-%     figure;
-%     plot(f,20*log10(abs(h)+eps));
-%     legend('LP Filter');
-%     xlabel('Frequency (Hz)');
-%     ylabel('Gain (dB)');
-%     pause;
+    
     if ismember( 1, isnan(a) )
         display('Found silent portion, skipping');
         continue;
@@ -102,22 +97,39 @@ for begin = 1:shift:len
         if i_formants > n_formants
             break;
         end
-        if ( frqs(i) > Freqs(1) && frqs(i) < Freqs(2) )
+        if ( frqs(i) > Freqs(1) && frqs(i) < Freqs(2) && bw(i) > 0 && bw(i) < Freqs(3) )
             F(frame, i_formants) = frqs(i);
             B(frame, i_formants) = bw(i);
             i_formants = i_formants + 1;
+            
+            if DRAW_RESPONSE && PAUSE
+                [h,f]=freqz(1,a,512,fs);
+                figure;
+                plot(f,20*log10(abs(h)+eps));
+                legend('LP Filter');
+                xlabel('Frequency (Hz)');
+                ylabel('Gain (dB)');
+                DRAW_RESPONSE = DRAW_RESPONSE - 1;
+            end
+                
         end
     end
-%     F(frame, :)
-%     spectrogram(x, window_length, overlap, 128, fs, 'yaxis' );
-%     colormap bone;
-%     pause;
-    frame = frame + 1;
     
+    frame = frame + 1;
 end
-B
 
-%display( 'Finished.' );
+if PAUSE
+    figure;
+    spectrogram(mean_normalise(signal), 100, 90, 128, fs, 'yaxis' );
+    colormap bone;
+    figure;
+    plot(F(:, 1), 'b.');
+    hold on;
+    plot(F(:, 2), 'r.');
+    figure;
+    plot(F(:, 1), F(:, 2), '.');
+end
+
 end
 
 
