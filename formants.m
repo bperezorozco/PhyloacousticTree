@@ -39,7 +39,7 @@ if nargin < 8
     window = 'hamming';
 end
 if nargin < 7
-    Freqs = [ 500 40000 500 ];
+    Freqs = [ 500 10000 500 ];
 end
 if nargin < 6
     n_lpc = n_formants * 2 + 2;
@@ -120,12 +120,14 @@ end
 
 if PAUSE
     figure;
-    spectrogram(mean_normalise(signal), 100, 90, 128, fs, 'yaxis' );
+    NFFT = 2 ^ nextpow2( window_length );
+    spectrogram(mean_normalise(signal), window_length, overlap, NFFT, fs, 'yaxis' );
     colormap bone;
     figure;
     plot(F(:, 1), 'b.');
     hold on;
     plot(F(:, 2), 'r.');
+    plot(F(:, 3), 'g.');
     figure;
     plot(F(:, 1), F(:, 2), '.');
 end
