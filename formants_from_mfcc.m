@@ -25,7 +25,7 @@ function [ F ] = formants_from_mfcc( signal, fs, n_formants, window_length, over
 %       vector of 2 decimals, coefficients for preemphasis
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-PAUSE = true;
+PAUSE = false;
 DRAW_RESPONSE = 0;
 
 if nargin < 3
@@ -87,6 +87,11 @@ for begin = 1:shift:len
     
     %a = lpc(r, P);
     a = levinson(r, P);
+    if ismember( 1, isnan(a) )
+        display('Found silent portion, skipping');
+        continue;
+    end
+    
     rt = roots( a );
     rt = rt(imag(rt) >= 0);
     angz = atan2(imag(rt),real(rt));
