@@ -8,7 +8,7 @@ i=1;
 
 for file=dir( s )'
     f{i} = file.name;
-    kde( formants( strcat('dataset/', folders{n}, '/', file.name) ) );
+    kde( formants( strcat('dataset/', folders{n}, '/', file.name) ), 0, 6000 );
     i = i + 1;
 end
 

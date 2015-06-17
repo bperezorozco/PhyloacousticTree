@@ -1,10 +1,10 @@
-function [ D ] = get_rows_distance( X )
+function [ D ] = get_rows_distance( X, fun )
 %GET_ROWS_DISTANCE Summary of this function goes here
 %   Detailed explanation goes here
 
 [m n] = size( X );
 D = zeros(m, m);
-temp = pdist(X);
+temp = pdist(X, @(Xi, Xj)fun(Xi, Xj));
 
 k = 1;
 for i=1:m
