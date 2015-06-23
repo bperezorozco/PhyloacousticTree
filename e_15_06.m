@@ -45,33 +45,37 @@ accum = 0;
 pdf_sp(j, :) = mean(accum / nfiles);
 end
 
-display('Calculating SKLD and Hellinger distance matrices...');
+% display('Calculating SKLD and Hellinger distance matrices...');
 Hhellinger = @(x,y)((1/sqrt(2))*sqrt(sum(bsxfun(@minus,sqrt(x),sqrt(y)).^2,2)));
 Hskld = @(p,q)(sum(bsxfun(@times,bsxfun(@minus,p,q),log(bsxfun(@rdivide,p,q))),2));
 
-S = get_rows_distance(pdf5, Hskld);
-H = get_rows_distance(pdf5, Hhellinger);
+% S = get_rows_distance(pdf5, Hskld);
+% H = get_rows_distance(pdf5, Hhellinger);
+% 
+% 
+% display('Calculating SKLD and Hellinger distance matrices per species...');
+% S2 = get_rows_distance(pdf_sp, Hskld);
+% H2 = get_rows_distance(pdf_sp, Hhellinger);
 
-
-display('Calculating SKLD and Hellinger distance matrices per species...');
-S2 = get_rows_distance(pdf_sp, Hskld);
-H2 = get_rows_distance(pdf_sp, Hhellinger);
-
-display('Plotting K species pdfs at random...');
-K = 6;
-seq = randperm(length(folders5), K); 
-plot( xmesh, pdf_sp( seq, : ) ); 
-legend(folders5{seq});
+% display('Plotting K species pdfs at random...');
+% K = 6;
+% seq = randperm(length(folders5), K); 
+% plot( xmesh, pdf_sp( seq, : ) ); 
+% legend(folders5{seq});
+% 
+% figure;
+% pcolor(exp(-H2));shading('flat')
+% figure;
+% pcolor(exp(-S2));shading('flat')
+% clear bandwidth d density F1 filenames folders formants h i j k limit min_length nfiles s seq;
+% display('Finished.');
 
 figure;
-pcolor(exp(-H2));shading('flat')
+L = linkage( pdist(pdf_sp, @(Xi, Xj)Hskld(Xi, Xj)), 'weighted' );
+dendrogram(L, 79, 'Labels', folders5, 'Orientation', 'right', 'ColorThreshold', 0.3*max(L(:, 3)));
+title('Phylloacoustic tree using KDE+SKLD');
+
 figure;
-pcolor(exp(-S2));shading('flat')
-clear bandwidth d density F1 filenames folders formants h i j k limit min_length nfiles s seq;
-display('Finished.');
-
-
-% ES = count_links(S, 40);
-% EH = count_links(H, 40);
-% OS = add_submatrices(ES, nfiles);
-% OH = add_submatrices(EH, nfiles);
+L = linkage( pdist(pdf_sp, @(Xi, Xj)Hhellinger(Xi, Xj)), 'weighted' );
+dendrogram(L, 79, 'Labels', folders5, 'Orientation', 'right', 'ColorThreshold', 0.45*max(L(:, 3)));
+title('Phylloacoustic tree using KDE+Hellinger distance');
