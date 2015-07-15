@@ -25,8 +25,8 @@ function [ F ] = formants_from_mfcc( signal, fs, n_formants, window_length, over
 %       vector of 2 decimals, coefficients for preemphasis
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-PAUSE = false;
-DRAW_RESPONSE = 0;
+PAUSE = true;
+DRAW_RESPONSE = 500;
 
 if nargin < 3
     display( 'REQUIRED: @signal, @fs, @window_length' );
@@ -40,7 +40,7 @@ if nargin < 8
     window = 'hamming';
 end
 if nargin < 7
-    Freqs = [ 500 fs/2 500 ];
+    Freqs = [ 90 fs/2 400 ];
 end
 if nargin < 6
     n_lpc = n_formants * 2 + 2;
@@ -52,7 +52,7 @@ if nargin < 4
     window_length = 10;
 end
 if nargin < 3
-    n_formants = round( fs / 1000 );
+    n_formants = floor( fs / 2000 );
 end
 
 
@@ -62,6 +62,7 @@ shift = window_length - overlap;
 len = length( signal ) - mod( length(signal), shift ) - shift;
 frames = len / shift;
 F = zeros(frames, n_formants);
+threshold = 200;
 
 frame = 1;
 P = 2*n_formants + 2;
@@ -95,29 +96,24 @@ for begin = 1:shift:len
     rt = roots( a );
     rt = rt(imag(rt) >= 0);
     angz = atan2(imag(rt),real(rt));
-    [frqs, indices] = sort(angz.*(fs/(2*pi)), 'ascend');
-    F(frame, :) = frqs(1:n_formants)';
+    frqs = angz.*(fs/(2*pi));
+    bw = -1/2*(fs/(2*pi))*log(abs(rt));
+%     [bw, indices] = sort(bw, 'ascend');
+%     frqs = frqs(indices);
     
-    i_formants = 1;
+    [frqs, indices] = sort(frqs, 'ascend');
+    bw = bw(indices);
+    frqs( frqs < Freqs(1) | frqs > Freqs(2) |  bw > Freqs(3) ) = 0;
+    F(frame, :) = filter_formants( frqs, threshold, n_formants, bw );
     
-    for i = 1:length(frqs)
-        if i_formants > n_formants
-            break;
-        end
-        if ( frqs(i) > Freqs(1) && frqs(i) < Freqs(2) )
-            F(frame, i_formants) = frqs(i);
-            i_formants = i_formants + 1;
-            
-            if DRAW_RESPONSE && PAUSE
-                [h,f]=freqz(1,a,512,fs);
-                figure;
-                plot(f,20*log10(abs(h)+eps));
-                legend('LP Filter');
-                xlabel('Frequency (Hz)');
-                ylabel('Gain (dB)');
-                DRAW_RESPONSE = DRAW_RESPONSE - 1;
-            end
-        end
+    if PAUSE && DRAW_RESPONSE == frame 
+            [h,f]=freqz(1,a,512,fs);
+            figure;
+            plot(f,20*log10(abs(h)+eps));
+            legend('LP Filter');
+            xlabel('Frequency (Hz)');
+            ylabel('Gain (dB)');
+            DRAW_RESPONSE = DRAW_RESPONSE - 1;
     end
     
     frame = frame+1;

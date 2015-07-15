@@ -35,7 +35,10 @@ for i=1:n_dummy
     v{i} = reorder_hmm_states(hmm_dummy{i}, ind, K);
     dec(i, :) = dec(i, ind);
 end
-
+%%
+xmesh = 1:2^12-1;
+Hhellinger = @(x,y)((1/sqrt(2))*sqrt(sum(bsxfun(@minus,sqrt(x),sqrt(y)).^2,2)));
+Hskld = @(p,q)(sum(bsxfun(@times,bsxfun(@minus,p,q),log(bsxfun(@rdivide,p,q))),2));
 pdf_gmm = zeros(length(trained_hmm), length(xmesh));
 for i=1:length(trained_hmm)
     pdf_gmm(i, :) = gmmprob( trained_hmm{i}.mix, xmesh' )';
@@ -43,13 +46,15 @@ end
 
 figure;
 L = linkage( pdist(pdf_gmm, @(Xi, Xj)Hskld(Xi, Xj)), 'weighted' );
-dendrogram(L, 79, 'Labels', folders5, 'Orientation', 'right', 'ColorThreshold', 0.3*max(L(:, 3)));
+dendrogram(L, 79, 'Labels', id_folders, 'Orientation', 'right', 'ColorThreshold', 0.3*max(L(:, 3)));
 title('Phylloacoustic tree using GMM+SKLD');
+eval_phylo_tree(L, id_folders, meta)
 
 figure;
 L = linkage( pdist(pdf_gmm, @(Xi, Xj)Hhellinger(Xi, Xj)), 'weighted' );
-dendrogram(L, 79, 'Labels', folders5, 'Orientation', 'right', 'ColorThreshold', 0.25*max(L(:, 3)));
+dendrogram(L, 79, 'Labels', id_folders, 'Orientation', 'right', 'ColorThreshold', 0.25*max(L(:, 3)));
 title('Phylloacoustic tree using GMM+Hellinger distance');
+eval_phylo_tree(L, id_folders, meta)
 % figure;
 % hold on;
 % plot(dec(1, :), 'b');
