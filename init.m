@@ -12,4 +12,5 @@
 % load env;
 load handlers;
 load birdsong;
+genera = get_genera( id_folders );
 addpath(genpath('libs'));

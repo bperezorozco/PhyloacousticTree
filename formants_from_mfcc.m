@@ -1,4 +1,4 @@
-function [ F ] = formants_from_mfcc( signal, fs, n_formants, window_length, overlap, n_lpc, Freqs, window, Emph )
+function [ F B ] = formants_from_mfcc( signal, fs, n_formants, window_length, overlap, n_lpc, Freqs, window, Emph )
 %FORMANTS Estimates the formants of @signal every @window_length samples
 %with @overlap samples. It returns the first @n_formants in the interval
 %@Freqs. It can do preprocessing by applying window @window and
@@ -26,7 +26,7 @@ function [ F ] = formants_from_mfcc( signal, fs, n_formants, window_length, over
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 PAUSE = true;
-DRAW_RESPONSE = 500;
+DRAW_RESPONSE = 20;
 
 if nargin < 3
     display( 'REQUIRED: @signal, @fs, @window_length' );
@@ -40,7 +40,7 @@ if nargin < 8
     window = 'hamming';
 end
 if nargin < 7
-    Freqs = [ 90 fs/2 400 ];
+    Freqs = [ 90 7000 400 ];
 end
 if nargin < 6
     n_lpc = n_formants * 2 + 2;
@@ -62,6 +62,7 @@ shift = window_length - overlap;
 len = length( signal ) - mod( length(signal), shift ) - shift;
 frames = len / shift;
 F = zeros(frames, n_formants);
+B = zeros(frames, n_formants);
 threshold = 200;
 
 frame = 1;
@@ -100,11 +101,13 @@ for begin = 1:shift:len
     bw = -1/2*(fs/(2*pi))*log(abs(rt));
 %     [bw, indices] = sort(bw, 'ascend');
 %     frqs = frqs(indices);
-    
+
     [frqs, indices] = sort(frqs, 'ascend');
     bw = bw(indices);
-    frqs( frqs < Freqs(1) | frqs > Freqs(2) |  bw > Freqs(3) ) = 0;
-    F(frame, :) = filter_formants( frqs, threshold, n_formants, bw );
+    frqs( frqs < Freqs(1) | frqs >= Freqs(2) |  bw > Freqs(3) ) = 0;
+    [tmp1 tmp2] = filter_formants( frqs, threshold, n_formants, bw );
+    F(frame, :) = tmp1;
+    B(frame, :) = tmp2;
     
     if PAUSE && DRAW_RESPONSE == frame 
             [h,f]=freqz(1,a,512,fs);
@@ -127,8 +130,8 @@ if PAUSE
     figure;
     plot(F(:, 1), 'b.');
     hold on;
-    plot(F(:, 2), 'r.');
-    plot(F(:, 3), 'g.');
+    %plot(F(:, 2), 'r.');
+    %plot(F(:, 3), 'g.');
     %figure;
     %plot(F(:, 1), F(:, 2), '.');
 end

@@ -3,5 +3,6 @@ function [ F ] = formants_from_mfcc_file( filename, n_formants, timeframe )
 %   Detailed explanation goes here
     %filename
     [x fs] = audioread( filename );
-    F = formants_from_mfcc( x, fs, n_formants, timeframe );
+    r = 2;
+    F = formants_from_mfcc( resample( x, 1, r ), fs / r, n_formants, timeframe );
 end
